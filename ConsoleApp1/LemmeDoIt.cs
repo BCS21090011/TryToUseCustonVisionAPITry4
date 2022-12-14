@@ -8,7 +8,6 @@
     using Newtonsoft.Json;
     using System.Net.Http.Headers;
     using ConsoleApp1.Models;
-    using System.Drawing;
 
     public class LemmeProcess
     {
@@ -16,7 +15,31 @@
         string predictionKey = "35532dc500874d7a86cf0e18b789bc5a";
         string predictionUrl = "https://yysprediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f79b57d5-32a9-4566-949d-b144204c7ae0/detect/iterations/Iteration4/image";
 
-        public async void GimmeImg(string imgFileName, float passProbability, string saveFileName = "",string saveFileFolder = "")
+        #region These are just some example of Task and async:
+        public Task<string> Test()
+        {
+            return Task.FromResult("test");
+        }
+
+        public async Task<string> Test2()
+        {
+            return "test";
+        }
+        #endregion
+
+        public Task<HttpResponseMessage> ClassifyImage(string imgFileName)
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Prediction-Key", predictionKey);
+            var file = File.OpenRead(imgFileName);
+            byte[] imgBytes = FileReader.ReadFully(file);
+            var content = new ByteArrayContent(imgBytes);
+            Bitmap oriImg = (Bitmap)Image.FromFile(imgFileName);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            return client.PostAsync(predictionUrl, content);
+            }
+
+        public async Task<string> GimmeImg(string imgFileName, float passProbability, string saveFileName = "",string saveFileFolder = "")
         {
 
             HttpClient client = new HttpClient();

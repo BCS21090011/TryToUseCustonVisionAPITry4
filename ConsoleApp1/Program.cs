@@ -1,7 +1,10 @@
 ﻿namespace Program
 {
 
+    using System.Drawing;
+    using ConsoleApp1.Models;
     using LemmeDoIt;
+    using APIing;
 
     public class MainProgram
     {
@@ -19,7 +22,6 @@
             int index = 0;
             foreach (string file in files)
             {
-                pred.GimmeImg(imgFileName: file, passProbability: probToPass, saveFileName: Convert.ToString(index),saveFileFolder: outputFolder);
                 index++;
             }
 
