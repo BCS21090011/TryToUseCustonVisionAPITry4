@@ -8,97 +8,57 @@
     using Newtonsoft.Json;
     using System.Net.Http.Headers;
     using ConsoleApp1.Models;
+    using APIing;
 
     public class LemmeProcess
     {
 
-        string predictionKey = "35532dc500874d7a86cf0e18b789bc5a";
-        string predictionUrl = "https://yysprediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f79b57d5-32a9-4566-949d-b144204c7ae0/detect/iterations/Iteration4/image";
+        public List<List<ImgObj>> imgs = new List<List<ImgObj>>();
 
-        #region These are just some example of Task and async:
-        public Task<string> Test()
-        {
-            return Task.FromResult("test");
-        }
-
-        public async Task<string> Test2()
-        {
-            return "test";
-        }
-        #endregion
-
-        public Task<HttpResponseMessage> ClassifyImage(string imgFileName)
-        {
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Prediction-Key", predictionKey);
-            var file = File.OpenRead(imgFileName);
-            byte[] imgBytes = FileReader.ReadFully(file);
-            var content = new ByteArrayContent(imgBytes);
-            Bitmap oriImg = (Bitmap)Image.FromFile(imgFileName);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            return client.PostAsync(predictionUrl, content);
-            }
-
-        public async Task<string> GimmeImg(string imgFileName, float passProbability, string saveFileName = "",string saveFileFolder = "")
+        public async Task<List<ImgObj>> GimmeImg(string imgFile)
         {
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Prediction-Key", predictionKey);
-            var file = File.OpenRead(imgFileName);
-            byte[] imgBytes = FileReader.ReadFully(file);
-            var content = new ByteArrayContent(imgBytes);
-            Bitmap oriImg = (Bitmap)Image.FromFile(imgFileName);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            Console.WriteLine($"GimmeImg({imgFile})");
 
-            try
+            ComunicateAPI imgAPI = new ComunicateAPI();
+            var res = await imgAPI.HelloAPI(imgFileName:imgFile);
+
+            Bitmap oriImg = (Bitmap)Image.FromFile(imgFile);
+            List<Prediction> predictions = await imgAPI.GiveUPredictions(res: res);
+
+            List<ImgObj> imgs = new List<ImgObj>();
+
+            for (int i = 0; i < predictions.Count; i++)
             {
-
-                var res = await client.PostAsync(predictionUrl, content);
-                var str = await res.Content.ReadAsStringAsync();
-                var myPredictionModel = JsonConvert.DeserializeObject<MyPredictionModel>(str);
-                var predictions = myPredictionModel.predictions;
-
-                int index = 0;
-                if (predictions != null)
+                imgs.Add(new ImgObj()
                 {
-                    foreach (Prediction prediction in predictions)
-                    {
-                        if (prediction.probability >= passProbability)
-                        {
-                            if (prediction.tagName == "people")
-                            {
-
-                                string cleanFileName = Path.GetFileNameWithoutExtension(imgFileName);
-                                string outputFileName = saveFileFolder+"/" + cleanFileName + "Output" + index + ".jpg";
-
-                                Console.WriteLine($"\nFile: {cleanFileName}");
-                                Console.WriteLine($"Prediction number: {index}");
-                                Console.WriteLine($"Save as: {outputFileName}");
-                                Console.WriteLine($"{prediction.tagName}:{prediction.probability}");
-                                Console.WriteLine("Bounding box:");
-                                Console.WriteLine($"Left: {prediction.boundingBox.left}\tTop: {prediction.boundingBox.top}");
-                                Console.WriteLine($"Width: {prediction.boundingBox.width}\tHeight: {prediction.boundingBox.height}");
-
-                                Rectangle rect = GetRect(oriImg, prediction.boundingBox);
-                                Bitmap peopleImg = CutImg(oriImg, rect);
-                                peopleImg.Save(outputFileName, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                index++;
-
-                            }
-                        }
-                    }
-
-                }
-
+                    img = CutImg(img: oriImg, ruler: GetRect(img: oriImg, predictions[i].boundingBox)),
+                    saveFileName = Path.GetFileNameWithoutExtension(imgFile) + "Output" + Convert.ToString(i),
+                    predict = predictions[i]
+                });
             }
-            catch (Exception e)
-            {
 
+            return imgs;
+
+        }
+
+        public async void GimmeImg(string[] imgFiles)
+        {
+
+            foreach(string imgFile in imgFiles)
+            {
+                List<ImgObj> taggedImgs = await GimmeImg(imgFile: imgFile);
+                imgs.Add(taggedImgs);
             }
 
         }
 
-        Rectangle GetRect(Bitmap img, BoundingBox bdBox)
+        public void SaveImg(ImgObj img,string outputFolder)
+        {
+            img.img.Save(outputFolder + "/" + img.saveFileName);
+        }
+
+        public Rectangle GetRect(Bitmap img, BoundingBox bdBox)
         {
             int calcedLeft = Convert.ToInt32(img.Width * bdBox.left);
             int calcedTop = Convert.ToInt32(img.Height * bdBox.top);
@@ -110,30 +70,20 @@
             return ret;
         }
 
-        Bitmap CutImg(Bitmap img, Rectangle ruler)
+        public Bitmap CutImg(Bitmap img, Rectangle ruler)
         {
             Bitmap cuttedImg = img.Clone(ruler, img.PixelFormat);
 
             return cuttedImg;
         }
 
-        public class FileReader
-        {
-            public static byte[] ReadFully(Stream input)
-            {
-                byte[] buffer = new byte[16 * 1024];
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    int read;
-                    while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        ms.Write(buffer, 0, read);
-                    }
-                    return ms.ToArray();
-                }
-            }
-        }
+    }
 
+    public class ImgObj
+    {
+        public Bitmap img { get; set; }
+        public string saveFileName { get; set; }
+        public Prediction predict { get; set; }
     }
 
 }
