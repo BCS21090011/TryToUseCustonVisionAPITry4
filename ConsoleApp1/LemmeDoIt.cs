@@ -16,7 +16,7 @@
         string predictionKey = "35532dc500874d7a86cf0e18b789bc5a";
         string predictionUrl = "https://yysprediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f79b57d5-32a9-4566-949d-b144204c7ae0/detect/iterations/Iteration4/image";
 
-        public async void GimmeImg(string imgFileName, float passProbability, string saveFileName = "")
+        public async void GimmeImg(string imgFileName, float passProbability, string saveFileName = "",string saveFileFolder = "")
         {
 
             HttpClient client = new HttpClient();
@@ -45,11 +45,12 @@
                             if (prediction.tagName == "people")
                             {
 
-                                //string cleanFileName = Path.GetFileNameWithoutExtension(imgFileName);
-                                string outputFileName = "../../../Outputs/" + saveFileName + "Output" + index + ".jpg";
+                                string cleanFileName = Path.GetFileNameWithoutExtension(imgFileName);
+                                string outputFileName = saveFileFolder+"/" + cleanFileName + "Output" + index + ".jpg";
 
-                                Console.WriteLine($"File: {saveFileName}");
-                                Console.WriteLine($"Prediction number {index}:");
+                                Console.WriteLine($"\nFile: {cleanFileName}");
+                                Console.WriteLine($"Prediction number: {index}");
+                                Console.WriteLine($"Save as: {outputFileName}");
                                 Console.WriteLine($"{prediction.tagName}:{prediction.probability}");
                                 Console.WriteLine("Bounding box:");
                                 Console.WriteLine($"Left: {prediction.boundingBox.left}\tTop: {prediction.boundingBox.top}");

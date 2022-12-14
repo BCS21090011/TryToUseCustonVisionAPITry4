@@ -11,6 +11,7 @@
 
             float probToPass = 0.9f;
             string inputFolder = "../../../Inputs";
+            string outputFolder = "../../../Outputs";
             string[] files = Directory.GetFiles(inputFolder, "*.jpg");
 
             LemmeProcess pred = new LemmeProcess();
@@ -18,7 +19,7 @@
             int index = 0;
             foreach (string file in files)
             {
-                pred.GimmeImg(imgFileName: file, passProbability: probToPass, saveFileName: Convert.ToString(index));
+                pred.GimmeImg(imgFileName: file, passProbability: probToPass, saveFileName: Convert.ToString(index),saveFileFolder: outputFolder);
                 index++;
             }
 
