@@ -24,54 +24,64 @@
             var file = File.OpenRead(imgFileName);
             byte[] imgBytes = FileReader.ReadFully(file);
             var content = new ByteArrayContent(imgBytes);
-            Bitmap oriImg = (Bitmap)Image.FromFile(imgFileName);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
             try
             {
+                Bitmap oriImg = (Bitmap)Image.FromFile(imgFileName);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-                var res = await client.PostAsync(predictionUrl, content);
-                var str = await res.Content.ReadAsStringAsync();
-                var myPredictionModel = JsonConvert.DeserializeObject<MyPredictionModel>(str);
-                var predictions = myPredictionModel.predictions;
-
-                int index = 0;
-                if (predictions != null)
+                try
                 {
-                    foreach (Prediction prediction in predictions)
+
+                    var res = await client.PostAsync(predictionUrl, content);
+                    var str = await res.Content.ReadAsStringAsync();
+                    var myPredictionModel = JsonConvert.DeserializeObject<MyPredictionModel>(str);
+                    var predictions = myPredictionModel.predictions;
+
+                    int index = 0;
+                    if (predictions != null)
                     {
-                        if (prediction.probability >= passProbability)
+                        foreach (Prediction prediction in predictions)
                         {
-                            if (prediction.tagName == "people")
+                            if (prediction.probability >= passProbability)
                             {
+                                if (prediction.tagName == "people")
+                                {
 
-                                string cleanFileName = Path.GetFileNameWithoutExtension(imgFileName);
-                                string outputFileName = saveFileFolder+"/" + cleanFileName + "Output" + index + ".jpg";
+                                    string cleanFileName = Path.GetFileNameWithoutExtension(imgFileName);
+                                    string outputFileName = saveFileFolder + "/" + cleanFileName + "Output" + index + ".jpg";
 
-                                Console.WriteLine($"\nFile: {cleanFileName}");
-                                Console.WriteLine($"Prediction number: {index}");
-                                Console.WriteLine($"Save as: {outputFileName}");
-                                Console.WriteLine($"{prediction.tagName}:{prediction.probability}");
-                                Console.WriteLine("Bounding box:");
-                                Console.WriteLine($"Left: {prediction.boundingBox.left}\tTop: {prediction.boundingBox.top}");
-                                Console.WriteLine($"Width: {prediction.boundingBox.width}\tHeight: {prediction.boundingBox.height}");
+                                    Console.WriteLine($"\nFile: {cleanFileName}");
+                                    Console.WriteLine($"Prediction number: {index}");
+                                    Console.WriteLine($"Save as: {outputFileName}");
+                                    Console.WriteLine($"{prediction.tagName}:{prediction.probability}");
+                                    Console.WriteLine("Bounding box:");
+                                    Console.WriteLine($"Left: {prediction.boundingBox.left}\tTop: {prediction.boundingBox.top}");
+                                    Console.WriteLine($"Width: {prediction.boundingBox.width}\tHeight: {prediction.boundingBox.height}");
 
-                                Rectangle rect = GetRect(oriImg, prediction.boundingBox);
-                                Bitmap peopleImg = CutImg(oriImg, rect);
-                                peopleImg.Save(outputFileName, System.Drawing.Imaging.ImageFormat.Jpeg);
-                                index++;
+                                    Rectangle rect = GetRect(oriImg, prediction.boundingBox);
+                                    Bitmap peopleImg = CutImg(oriImg, rect);
+                                    peopleImg.Save(outputFileName, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                    index++;
 
+                                }
                             }
                         }
+
                     }
+
+                }
+                catch (Exception e)
+                {
 
                 }
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
-
+                Console.WriteLine("\n\n\nIf you see this, you got some errors, and I ain't going to solve it, I will just skip it.\n\n\n");
             }
+            
 
         }
 
